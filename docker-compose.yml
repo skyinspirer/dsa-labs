@@ -1,0 +1,32 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    environment:
+      DB_HOST: localhost
+      DB_PORT: 5432
+    network_mode: host
+    depends_on:
+      db:
+        condition: service_healthy
+
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: changeme
+      POSTGRES_DB: visits_db
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    network_mode: host
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d visits_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  db-data:
