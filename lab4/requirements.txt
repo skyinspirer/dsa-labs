@@ -1,0 +1,9 @@
+
+fastapi
+uvicorn[standard]
+psycopg[binary]
+SQLAlchemy[asyncio]
+
+requests
+httpx
+asyncpg
