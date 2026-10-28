@@ -5,6 +5,8 @@ from contextlib import asynccontextmanager
 from datetime import date
 from decimal import Decimal
 
+from concurrent.futures import ProcessPoolExecutor
+
 import httpx
 from fastapi import FastAPI, Query
 from sqlalchemy import text
@@ -25,6 +27,7 @@ SUPPLIERS = [
 REQUEST_TIMEOUT = 2.0
 RETRY_DELAY = 0.2
 
+process_pool = ProcessPoolExecutor(max_workers=2)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -36,9 +39,12 @@ async def lifespan(app: FastAPI):
         timeout=REQUEST_TIMEOUT
     )
 
+
     try:
+        app.state.process_pool = process_pool
         yield
-    finally:
+    finally:    
+        process_pool.shutdown(wait=True)
         await app.state.http_client.aclose()
         await app.state.engine.dispose()
 
@@ -163,7 +169,13 @@ async def search_books(
             successful_suppliers += 1
             all_books.append(books)
 
-    result = combine_books(all_books)
+    loop = asyncio.get_running_loop()
+
+    result = await loop.run_in_executor(
+        app.state.process_pool,
+        combine_books,
+        all_books,
+    )
 
     if not result and successful_suppliers == 0:
         return {
