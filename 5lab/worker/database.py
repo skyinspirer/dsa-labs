@@ -1,4 +1,4 @@
-
+from decimal import Decimal
 import os
 
 from sqlalchemy import (
@@ -58,7 +58,7 @@ class Operation(Base):
     store_id: Mapped[str] = mapped_column(String)
     check_number: Mapped[str] = mapped_column(String)
 
-    amount: Mapped[float | None] = mapped_column(
+    amount: Mapped[Decimal | None] = mapped_column(
         Numeric(12, 2),
         nullable=True
     )
